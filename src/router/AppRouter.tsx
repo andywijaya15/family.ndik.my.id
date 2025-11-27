@@ -1,6 +1,7 @@
 import { AuthProvider } from "@/context/AuthContext";
 import Login from "@/pages/Auth/Login";
 import Home from "@/pages/Home";
+import { Category } from "@/pages/Master/Category";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import RouteGuard from "./RouteGuard";
 
@@ -17,6 +18,14 @@ export const AppRouter = () => {
               element={
                 <RouteGuard>
                   <Home />
+                </RouteGuard>
+              }
+            />
+            <Route
+              path="/category"
+              element={
+                <RouteGuard>
+                  <Category />
                 </RouteGuard>
               }
             />

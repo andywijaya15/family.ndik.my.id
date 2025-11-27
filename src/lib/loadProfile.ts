@@ -10,7 +10,7 @@ export async function loadProfile() {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("full_name, avatar_url")
+    .select("full_name")
     .eq("id", user.id)
     .maybeSingle();
 
