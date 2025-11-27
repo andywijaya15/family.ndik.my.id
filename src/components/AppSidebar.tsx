@@ -4,7 +4,6 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -12,7 +11,7 @@ import {
 } from "@/components/ui/sidebar";
 import { loadProfile } from "@/lib/loadProfile";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronUp, Home, List, User2 } from "lucide-react";
+import { ChevronUp, CircleDollarSign, Home, List, User2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
@@ -20,6 +19,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 const items = [
   { title: "Home", url: "/home", icon: Home },
   { title: "Category", url: "/category", icon: List },
+  { title: "Transaction", url: "/transaction", icon: CircleDollarSign },
 ];
 
 export function AppSidebar() {
@@ -49,7 +49,7 @@ export function AppSidebar() {
       <SidebarHeader />
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Family Plan</SidebarGroupLabel>
+          {/* <SidebarGroupLabel>Family Plan</SidebarGroupLabel> */}
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => {
