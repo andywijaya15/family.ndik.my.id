@@ -10,12 +10,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/context/AuthContext";
+import { createCategory, deleteCategory, getCategories, updateCategory } from "@/repositories/categoryRepository";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
+type Category = { id: string; name: string };
 export const Category = () => {
-  type Category = { id: string; name: string };
+  const { session } = useAuth();
+  const userId = session?.user?.id ?? null;
   const [name, setName] = useState("");
   const [open, setOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -63,22 +67,10 @@ export const Category = () => {
   };
 
   const fetchCategories = async (page = 1, perPage = 10) => {
-    try {
-      const from = (page - 1) * perPage;
-      const to = page * perPage - 1;
-
-      const { data, count, error } = await supabase
-        .from("categories")
-        .select("*", { count: "exact" })
-        .order("created_at", { ascending: true })
-        .range(from, to);
-
-      if (error) throw error;
-      setCategories(data || []);
-      setTotalMenus(count || 0);
-    } catch (err: any) {
-      console.error("Failed to fetch categories:", err.message);
-    }
+    const { data, count, error } = await getCategories(page, perPage);
+    if (error) return console.error(error);
+    setCategories(data || []);
+    setTotalMenus(count || 0);
   };
 
   useEffect(() => {
@@ -87,31 +79,55 @@ export const Category = () => {
 
   const handleSave = async () => {
     const formattedName = name.toUpperCase();
-    try {
-      if (selected) {
-        await supabase.from("categories").update({ name: formattedName, updated_at: new Date() }).eq("id", selected.id);
-      } else {
-        await supabase.from("categories").insert([{ name: formattedName, updated_at: new Date() }]);
+
+    // CREATE
+    if (!selected) {
+      const { error } = await createCategory(formattedName, userId);
+
+      if (error) {
+        toast.error(error.message); // ⬅️ ALERT ERROR DI SONNER
+        return;
       }
-      await fetchCategories(); // update context
-      setOpen(false);
-      setSelected(null);
-      setName("");
-    } catch (err: any) {
-      console.error("Failed to save category:", err.message);
+
+      toast.success("Category created!"); // ⬅️ ALERT SUKSES
     }
+
+    // UPDATE
+    else {
+      const { error } = await updateCategory(selected.id, formattedName, userId);
+
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+
+      toast.success("Category updated!");
+    }
+
+    setPage(1);
+    await fetchCategories(1, perPage);
+    setOpen(false);
+    setSelected(null);
+    setName("");
   };
 
   const handleDelete = async () => {
     if (!selected) return;
-    try {
-      await supabase.from("categories").delete().eq("id", selected.id);
-      await fetchCategories(); // update context
-      setDeleteOpen(false);
-      setSelected(null);
-    } catch (err: any) {
-      console.error("Failed to delete category:", err.message);
+
+    const { error } = await deleteCategory(selected.id);
+
+    if (error) {
+      toast.error(error.message);
+      return;
     }
+
+    toast.success("Category deleted!");
+
+    setPage(1);
+    await fetchCategories(1, perPage);
+
+    setDeleteOpen(false);
+    setSelected(null);
   };
 
   const columns: ColumnDef<Category>[] = [
