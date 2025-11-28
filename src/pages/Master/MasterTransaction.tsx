@@ -5,6 +5,7 @@ import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/context/AuthContext";
 import { getCategories } from "@/repositories/categoryRepository";
 import { getProfiles } from "@/repositories/profileRepository";
@@ -158,29 +159,35 @@ export const MasterTransaction = () => {
       </div>
 
       <div className="flex gap-2 mb-4">
-        <select
-          className="border p-2 rounded"
-          value={filterMonth}
-          onChange={(e) => setFilterMonth(Number(e.target.value))}
-        >
-          {months.map((name, index) => (
-            <option key={index} value={index + 1}>
-              {name} {/* Tampil nama bulan */}
-            </option>
-          ))}
-        </select>
+        {/* Filter Bulan */}
+        <Select value={filterMonth.toString()} onValueChange={(val) => setFilterMonth(Number(val))}>
+          <SelectTrigger className="border p-2 rounded w-32">
+            <SelectValue>
+              {months[filterMonth - 1]} {/* Tampilkan nama bulan */}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {months.map((name, index) => (
+              <SelectItem key={index} value={(index + 1).toString()}>
+                {name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-        <select
-          className="border p-2 rounded"
-          value={filterYear}
-          onChange={(e) => setFilterYear(Number(e.target.value))}
-        >
-          {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => (
-            <option key={y} value={y}>
-              {y}
-            </option>
-          ))}
-        </select>
+        {/* Filter Tahun */}
+        <Select value={filterYear.toString()} onValueChange={(val) => setFilterYear(Number(val))}>
+          <SelectTrigger className="border p-2 rounded w-24">
+            <SelectValue>{filterYear}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+              <SelectItem key={y} value={y.toString()}>
+                {y}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <DataTable
