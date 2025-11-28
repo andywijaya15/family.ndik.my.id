@@ -7,48 +7,61 @@ import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import { createCategory, deleteCategory, getCategories, updateCategory } from "@/repositories/categoryRepository";
+import type { Category } from "@/types/database";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-type Category = { id: string; name: string };
-export const Category = () => {
+export const MasterCategory = () => {
   const { session } = useAuth();
   const userId = session?.user?.id ?? null;
-  const [name, setName] = useState("");
 
+  const [name, setName] = useState("");
   const [openForm, setOpenForm] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [selected, setSelected] = useState<Category | null>(null);
 
   const [categories, setCategories] = useState<Category[]>([]);
-
-  const [totalMenus, setTotalMenus] = useState(0);
+  const [totalCategories, setTotalCategories] = useState(0);
   const [page, setPage] = useState(1);
   const perPage = 10;
+  const totalPages = Math.ceil(totalCategories / perPage);
 
-  const totalPages = Math.ceil(totalMenus / perPage);
-
-  const fetchCategories = async (page = 1, perPage = 10) => {
+  const fetchCategories = async (page = 1) => {
     const { data, count, error } = await getCategories(page, perPage);
     if (error) return console.error(error);
     setCategories(data || []);
-    setTotalMenus(count || 0);
+    setTotalCategories(count || 0);
   };
 
   useEffect(() => {
     fetchCategories();
   }, []);
 
+  // CREATE / UPDATE
   const save = async () => {
     const formatted = name.toUpperCase();
 
     if (!selected) {
-      const { error } = await createCategory(formatted, userId);
+      // CREATE
+      const { error } = await createCategory({
+        name: formatted,
+        type: "EXPENSE",
+        created_by: userId,
+        updated_by: userId,
+      });
+
       if (error) return toast.error(error.message);
+
       toast.success("Created!");
     } else {
-      const { error } = await updateCategory(selected.id, formatted, userId);
+      // UPDATE
+      const { error } = await updateCategory(selected.id, {
+        name: formatted,
+        updated_by: userId,
+      });
+
       if (error) return toast.error(error.message);
+
       toast.success("Updated!");
     }
 
@@ -59,12 +72,15 @@ export const Category = () => {
     setName("");
   };
 
+  // DELETE
   const remove = async () => {
     if (!selected) return;
+
     const { error } = await deleteCategory(selected.id, userId);
     if (error) return toast.error(error.message);
 
     toast.success("Deleted!");
+
     setPage(1);
     await fetchCategories(1);
     setOpenDelete(false);
@@ -74,7 +90,15 @@ export const Category = () => {
   return (
     <Layout title="Master Category">
       <div className="flex justify-between mb-4">
-        {<Button onClick={() => setOpenForm(true)}>+ Add Category</Button>}
+        <Button
+          onClick={() => {
+            setSelected(null);
+            setName("");
+            setOpenForm(true);
+          }}
+        >
+          + Add Category
+        </Button>
       </div>
 
       <DataTable
@@ -112,6 +136,7 @@ export const Category = () => {
         ]}
         data={categories}
       />
+
       <Pagination
         page={page}
         totalPages={totalPages}
