@@ -3,12 +3,25 @@ import react from '@vitejs/plugin-react-swc'
 import path from 'path'
 import { defineConfig } from 'vite'
 
-// https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(),tailwindcss()],
+  plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  build: {
+    // Naikkan limit warning chunk
+    chunkSizeWarningLimit: 2000, // KB, default 500
+    rollupOptions: {
+      output: {
+        // Pisahkan dependencies besar ke chunk vendor
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            return 'vendor'
+          }
+        },
+      },
     },
   },
 })

@@ -1,15 +1,11 @@
 import { AuthProvider } from "@/context/AuthContext";
 import Login from "@/pages/Auth/Login";
 import Home from "@/pages/Home";
-import { lazy, Suspense } from "react";
+import { MasterCategory } from "@/pages/Master/MasterCategory";
+import { MasterTransaction } from "@/pages/Master/MasterTransaction";
+import { Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import RouteGuard from "./RouteGuard";
-const MasterCategory = lazy(() =>
-  import("@/pages/Master/MasterCategory").then((mod) => ({ default: mod.MasterCategory }))
-);
-const MasterTransaction = lazy(() =>
-  import("@/pages/Master/MasterTransaction").then((mod) => ({ default: mod.MasterTransaction }))
-);
 
 export const AppRouter = () => {
   return (
