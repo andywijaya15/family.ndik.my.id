@@ -10,7 +10,7 @@ export const getTransactions = async (page: number, perPage: number, month?: num
         .from("transactions")
         .select("*", { count: "exact" })
         .is("deleted_at", null)
-        .order("transaction_date", { ascending: false })
+        .order("transaction_date", { ascending: true })
         .range(from, to);
 
     if (month && year) {
