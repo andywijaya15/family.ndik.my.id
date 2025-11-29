@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabaseClient";
 import type { Category } from "@/types/database";
+import { uppercaseData } from "@/utils/uppercase";
 
 // GET
 export const getCategories = async (page: number = 1, perPage: number = 1000) => {
@@ -18,11 +19,11 @@ export const getCategories = async (page: number = 1, perPage: number = 1000) =>
 
 // CREATE
 export const createCategory = async (payload: Partial<Category>) => {
-    const body = {
+    const body = uppercaseData({
         ...payload,
         created_at: new Date(),
         updated_at: new Date(),
-    };
+    });
 
     const { data, error } = await supabase
         .from("categories")
@@ -34,10 +35,10 @@ export const createCategory = async (payload: Partial<Category>) => {
 
 // UPDATE
 export const updateCategory = async (id: string, payload: Partial<Category>) => {
-    const body = {
+    const body = uppercaseData({
         ...payload,
         updated_at: new Date(),
-    };
+    });
 
     const { data, error } = await supabase
         .from("categories")

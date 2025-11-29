@@ -3,6 +3,7 @@ import { FormDialog } from "@/components/FormDialog";
 import Layout from "@/components/layouts/Layout";
 import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,11 +13,13 @@ import { getProfiles } from "@/repositories/profileRepository";
 import {
   createTransaction,
   deleteTransaction,
+  getExpenseOverviewByCategory,
+  getOverviewByPaidBy,
   getTransactions,
   updateTransaction,
 } from "@/repositories/transactionRepository";
 import type { Category, Profile, Transaction } from "@/types/database";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 const months = [
@@ -41,7 +44,7 @@ export const MasterTransaction = () => {
   const [filterMonth, setFilterMonth] = useState<number>(new Date().getMonth() + 1);
   const [filterYear, setFilterYear] = useState<number>(new Date().getFullYear());
 
-  const [transactionDate, setTransactionDate] = useState("");
+  const [transactionDate, setTransactionDate] = useState(new Date().toISOString().split("T")[0]);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [amount, setAmount] = useState<number>(0);
   const [description, setDescription] = useState("");
@@ -60,11 +63,32 @@ export const MasterTransaction = () => {
   const perPage = 10;
   const totalPages = Math.ceil(totalTransactions / perPage);
 
+  const [stats, setStats] = useState<{ name: string; total: number }[]>([]);
+  const [paidStats, setPaidStats] = useState<{ name: string; total: number }[]>([]);
+  const [totalThisMonth, setTotalThisMonth] = useState(0);
+
   const fetchTransactions = async (page = 1) => {
     const { data, count, error } = await getTransactions(page, perPage, filterMonth, filterYear);
     if (error) return console.error(error);
     setTransactions(data || []);
     setTotalTransactions(count || 0);
+  };
+
+  const fetchStats = async () => {
+    const { data } = await getExpenseOverviewByCategory(filterMonth, filterYear);
+    setStats(data || []);
+  };
+
+  const fetchPaidStats = async () => {
+    const { data } = await getOverviewByPaidBy(filterMonth, filterYear);
+    setPaidStats(data || []);
+  };
+
+  const fetchTotalThisMonth = async () => {
+    const { data } = await getTransactions(1, 9999, filterMonth, filterYear); // ambil semua bulan ini
+    if (!data) return;
+    const total = data.reduce((sum, tx) => sum + tx.amount, 0);
+    setTotalThisMonth(total);
   };
 
   const fetchSupportingData = async () => {
@@ -81,6 +105,9 @@ export const MasterTransaction = () => {
 
   useEffect(() => {
     fetchTransactions(1);
+    fetchStats();
+    fetchPaidStats();
+    fetchTotalThisMonth();
   }, [filterMonth, filterYear]);
 
   // CREATE / UPDATE
@@ -89,32 +116,23 @@ export const MasterTransaction = () => {
     if (!categoryId) return toast.error("Category required");
     if (!amount || amount <= 0) return toast.error("Amount invalid");
 
-    if (!selected) {
-      // CREATE
-      const { error } = await createTransaction({
-        transaction_date: transactionDate,
-        category_id: categoryId,
-        amount,
-        description,
-        paid_by: paidBy,
-        created_by: userId,
-        updated_by: userId,
-        is_reimbursed: false,
-      });
+    const payload = {
+      transaction_date: transactionDate,
+      category_id: categoryId,
+      amount,
+      description,
+      paid_by: paidBy,
+      updated_by: userId,
+      created_by: userId,
+      is_reimbursed: false,
+    };
 
+    if (!selected) {
+      const { error } = await createTransaction(payload);
       if (error) return toast.error(error.message);
       toast.success("Created!");
     } else {
-      // UPDATE
-      const { error } = await updateTransaction(selected.id, {
-        transaction_date: transactionDate,
-        category_id: categoryId,
-        amount,
-        description,
-        paid_by: paidBy,
-        updated_by: userId,
-      });
-
+      const { error } = await updateTransaction(selected.id, payload);
       if (error) return toast.error(error.message);
       toast.success("Updated!");
     }
@@ -126,7 +144,7 @@ export const MasterTransaction = () => {
 
   const resetForm = () => {
     setSelected(null);
-    setTransactionDate("");
+    setTransactionDate(new Date().toISOString().split("T")[0]);
     setCategoryId(null);
     setAmount(0);
     setDescription("");
@@ -135,7 +153,6 @@ export const MasterTransaction = () => {
 
   const remove = async () => {
     if (!selected) return;
-
     const { error } = await deleteTransaction(selected.id, userId);
     if (error) return toast.error(error.message);
 
@@ -144,6 +161,35 @@ export const MasterTransaction = () => {
     resetForm();
     setOpenDelete(false);
   };
+
+  // useMemo untuk options agar tidak recreate setiap render
+  const categoryOptions = useMemo(
+    () =>
+      categories.map((cat) => (
+        <SelectItem key={cat.id} value={cat.id}>
+          {cat.name}
+        </SelectItem>
+      )),
+    [categories]
+  );
+
+  const profileOptions = useMemo(
+    () =>
+      profiles.map((p) => (
+        <SelectItem key={p.id} value={p.id}>
+          {p.full_name}
+        </SelectItem>
+      )),
+    [profiles]
+  );
+
+  const profileMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    profiles.forEach((p) => {
+      map[p.id] = p.full_name;
+    });
+    return map;
+  }, [profiles]);
 
   return (
     <Layout title="Transactions">
@@ -162,14 +208,12 @@ export const MasterTransaction = () => {
         {/* Filter Bulan */}
         <Select value={filterMonth.toString()} onValueChange={(val) => setFilterMonth(Number(val))}>
           <SelectTrigger className="border p-2 rounded w-32">
-            <SelectValue>
-              {months[filterMonth - 1]} {/* Tampilkan nama bulan */}
-            </SelectValue>
+            <SelectValue>{months[filterMonth - 1]}</SelectValue>
           </SelectTrigger>
           <SelectContent>
-            {months.map((name, index) => (
-              <SelectItem key={index} value={(index + 1).toString()}>
-                {name}
+            {months.map((m, idx) => (
+              <SelectItem key={idx} value={(idx + 1).toString()}>
+                {m}
               </SelectItem>
             ))}
           </SelectContent>
@@ -190,10 +234,70 @@ export const MasterTransaction = () => {
         </Select>
       </div>
 
+      <h2 className="text-lg font-semibold mb-2">Overview by Paid By</h2>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+        {paidStats.map((item, index) => (
+          <Card key={index} className="p-4 rounded-xl shadow-md">
+            <CardHeader className="p-0 mb-2">
+              <CardTitle className="text-sm text-gray-600 font-normal">{item.name}</CardTitle>
+            </CardHeader>
+
+            <CardContent className="p-0">
+              <div className="text-2xl font-bold">Rp {item.total.toLocaleString("id-ID")}</div>
+              <div className="text-xs text-gray-500 mt-2">Total Dibayar Orang Ini</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* OVERVIEW CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+        {stats.map((item, index) => (
+          <Card key={index} className="p-4 rounded-xl shadow-md">
+            <CardHeader className="p-0 mb-2">
+              <CardTitle className="text-sm text-gray-600 font-normal">{item.name}</CardTitle>
+            </CardHeader>
+
+            <CardContent className="p-0">
+              <div className="text-2xl font-bold">Rp {item.total.toLocaleString("id-ID")}</div>
+
+              <div className="text-xs text-gray-500 mt-2">Total Pengeluaran Bulan Ini</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
       <DataTable
         columns={[
           { accessorKey: "transaction_date", header: "Date" },
-          { accessorKey: "amount", header: "Amount" },
+          {
+            accessorKey: "amount",
+            header: "Amount",
+            cell: ({ row }) => {
+              const amount = row.original.amount || 0;
+              return <div className="font-medium">Rp {amount.toLocaleString("id-ID")}</div>;
+            },
+          },
+          {
+            accessorKey: "paid_by",
+            header: "Paid By",
+            cell: ({ row }) => {
+              const id = row.original.paid_by;
+              const name = id ? profileMap[id] : null;
+
+              return (
+                <div>
+                  {name ? (
+                    <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">{name}</span>
+                  ) : (
+                    <span className="text-gray-400 text-xs">-</span>
+                  )}
+                </div>
+              );
+            },
+          },
+
           { accessorKey: "description", header: "Description" },
           {
             id: "actions",
@@ -204,14 +308,12 @@ export const MasterTransaction = () => {
                   variant="secondary"
                   onClick={() => {
                     const t = row.original;
-
                     setSelected(t);
                     setTransactionDate(t.transaction_date);
                     setCategoryId(t.category_id);
                     setAmount(t.amount);
                     setDescription(t.description || "");
                     setPaidBy(t.paid_by);
-
                     setOpenForm(true);
                   }}
                 >
@@ -235,16 +337,23 @@ export const MasterTransaction = () => {
         data={transactions}
       />
 
+      <div className="mt-4 p-4 rounded-lg border bg-white shadow-sm text-right">
+        <div className="text-sm text-gray-600">Total Pengeluaran Bulan Ini</div>
+        <div className="text-2xl font-bold">Rp {totalThisMonth.toLocaleString("id-ID")}</div>
+      </div>
+
       <Pagination
         page={page}
         totalPages={totalPages}
         onPrev={() => {
-          setPage(page - 1);
-          fetchTransactions(page - 1);
+          const newPage = page - 1;
+          setPage(newPage);
+          fetchTransactions(newPage);
         }}
         onNext={() => {
-          setPage(page + 1);
-          fetchTransactions(page + 1);
+          const newPage = page + 1;
+          setPage(newPage);
+          fetchTransactions(newPage);
         }}
       />
 
@@ -265,24 +374,18 @@ export const MasterTransaction = () => {
           {/* CATEGORY */}
           <div>
             <label className="block mb-2 text-sm">Category</label>
-            <select
-              className="border p-2 w-full rounded"
-              value={categoryId ?? ""}
-              onChange={(e) => setCategoryId(e.target.value)}
-            >
-              <option value="">Select category</option>
-              {categories.map((cat: any) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
+            <Select value={categoryId ?? ""} onValueChange={setCategoryId}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>{categoryOptions}</SelectContent>
+            </Select>
           </div>
 
           {/* AMOUNT */}
           <div>
             <label className="block mb-2 text-sm">Amount</label>
-            <Input type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
+            <Input type="number" min={0} value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
           </div>
 
           {/* DESCRIPTION */}
@@ -298,18 +401,12 @@ export const MasterTransaction = () => {
           {/* PAID BY */}
           <div>
             <label className="block mb-2 text-sm">Paid By</label>
-            <select
-              className="border p-2 w-full rounded"
-              value={paidBy ?? ""}
-              onChange={(e) => setPaidBy(e.target.value)}
-            >
-              <option value="">Select person</option>
-              {profiles.map((p: any) => (
-                <option key={p.id} value={p.id}>
-                  {p.full_name}
-                </option>
-              ))}
-            </select>
+            <Select value={paidBy ?? ""} onValueChange={setPaidBy}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select person" />
+              </SelectTrigger>
+              <SelectContent>{profileOptions}</SelectContent>
+            </Select>
           </div>
         </div>
       </FormDialog>

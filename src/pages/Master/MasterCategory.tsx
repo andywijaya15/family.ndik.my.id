@@ -39,29 +39,24 @@ export const MasterCategory = () => {
 
   // CREATE / UPDATE
   const save = async () => {
-    const formatted = name.toUpperCase();
+    const formatted = name.toUpperCase().trim();
+    if (!formatted) return toast.error("Category name cannot be empty");
 
     if (!selected) {
-      // CREATE
       const { error } = await createCategory({
         name: formatted,
         type: "EXPENSE",
         created_by: userId,
         updated_by: userId,
       });
-
       if (error) return toast.error(error.message);
-
       toast.success("Created!");
     } else {
-      // UPDATE
       const { error } = await updateCategory(selected.id, {
         name: formatted,
         updated_by: userId,
       });
-
       if (error) return toast.error(error.message);
-
       toast.success("Updated!");
     }
 
@@ -80,7 +75,6 @@ export const MasterCategory = () => {
     if (error) return toast.error(error.message);
 
     toast.success("Deleted!");
-
     setPage(1);
     await fetchCategories(1);
     setOpenDelete(false);
@@ -141,12 +135,14 @@ export const MasterCategory = () => {
         page={page}
         totalPages={totalPages}
         onPrev={() => {
-          setPage(page - 1);
-          fetchCategories(page - 1);
+          const newPage = page - 1;
+          setPage(newPage);
+          fetchCategories(newPage);
         }}
         onNext={() => {
-          setPage(page + 1);
-          fetchCategories(page + 1);
+          const newPage = page + 1;
+          setPage(newPage);
+          fetchCategories(newPage);
         }}
       />
 
@@ -157,9 +153,11 @@ export const MasterCategory = () => {
         onSubmit={save}
         submitLabel={selected ? "Update" : "Create"}
       >
-        <div>
-          <label className="block mb-2 text-sm">Category Name</label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter category name" autoFocus />
+        <div className="space-y-4">
+          <div>
+            <label className="block mb-2 text-sm font-medium">Category Name</label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter category name" autoFocus />
+          </div>
         </div>
       </FormDialog>
 
