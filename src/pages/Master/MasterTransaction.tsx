@@ -46,7 +46,7 @@ export const MasterTransaction = () => {
 
   const [transactionDate, setTransactionDate] = useState(new Date().toISOString().split("T")[0]);
   const [categoryId, setCategoryId] = useState<string | null>(null);
-  const [amount, setAmount] = useState<number>(0);
+  const [amount, setAmount] = useState<string>("");
   const [description, setDescription] = useState("");
   const [paidBy, setPaidBy] = useState<string | null>(null);
 
@@ -66,9 +66,10 @@ export const MasterTransaction = () => {
   const [stats, setStats] = useState<{ name: string; total: number }[]>([]);
   const [paidStats, setPaidStats] = useState<{ name: string; total: number }[]>([]);
   const [totalThisMonth, setTotalThisMonth] = useState(0);
+  const [filterCategory, setFilterCategory] = useState("ALL");
 
   const fetchTransactions = async (page = 1) => {
-    const { data, count, error } = await getTransactions(page, perPage, filterMonth, filterYear);
+    const { data, count, error } = await getTransactions(page, perPage, filterMonth, filterYear, filterCategory);
     if (error) return console.error(error);
     setTransactions(data || []);
     setTotalTransactions(count || 0);
@@ -108,18 +109,19 @@ export const MasterTransaction = () => {
     fetchStats();
     fetchPaidStats();
     fetchTotalThisMonth();
-  }, [filterMonth, filterYear]);
+  }, [filterMonth, filterYear, filterCategory]);
 
   // CREATE / UPDATE
   const save = async () => {
     if (!transactionDate) return toast.error("Transaction date required");
     if (!categoryId) return toast.error("Category required");
-    if (!amount || amount <= 0) return toast.error("Amount invalid");
+    const amountNumber = amount === "" ? 0 : Number(amount);
+    if (!amountNumber || amountNumber <= 0) return toast.error("Amount invalid");
 
     const payload = {
       transaction_date: transactionDate,
       category_id: categoryId,
-      amount,
+      amountNumber,
       description,
       paid_by: paidBy,
       updated_by: userId,
@@ -146,7 +148,7 @@ export const MasterTransaction = () => {
     setSelected(null);
     setTransactionDate(new Date().toISOString().split("T")[0]);
     setCategoryId(null);
-    setAmount(0);
+    setAmount("");
     setDescription("");
     setPaidBy(null);
   };
@@ -191,6 +193,14 @@ export const MasterTransaction = () => {
     return map;
   }, [profiles]);
 
+  const categoryMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    categories.forEach((c) => {
+      map[c.id] = c.name;
+    });
+    return map;
+  }, [categories]);
+
   return (
     <Layout title="Transactions">
       <div className="flex justify-between mb-4">
@@ -228,6 +238,20 @@ export const MasterTransaction = () => {
             {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => (
               <SelectItem key={y} value={y.toString()}>
                 {y}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={filterCategory ?? ""} onValueChange={setFilterCategory}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All Categories</SelectItem>
+            {categories.map((cat) => (
+              <SelectItem key={cat.id} value={cat.id}>
+                {cat.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -272,6 +296,24 @@ export const MasterTransaction = () => {
         columns={[
           { accessorKey: "transaction_date", header: "Date" },
           {
+            accessorKey: "category_id",
+            header: "Category",
+            cell: ({ row }) => {
+              const id = row.original.category_id;
+              const name = id ? categoryMap[id] : null;
+
+              return (
+                <div>
+                  {name ? (
+                    <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">{name}</span>
+                  ) : (
+                    <span className="text-gray-400 text-xs">-</span>
+                  )}
+                </div>
+              );
+            },
+          },
+          {
             accessorKey: "amount",
             header: "Amount",
             cell: ({ row }) => {
@@ -311,7 +353,7 @@ export const MasterTransaction = () => {
                     setSelected(t);
                     setTransactionDate(t.transaction_date);
                     setCategoryId(t.category_id);
-                    setAmount(t.amount);
+                    setAmount(String(t.amount));
                     setDescription(t.description || "");
                     setPaidBy(t.paid_by);
                     setOpenForm(true);
@@ -337,10 +379,15 @@ export const MasterTransaction = () => {
         data={transactions}
       />
 
-      <div className="mt-4 p-4 rounded-lg border bg-white shadow-sm text-right">
-        <div className="text-sm text-gray-600">Total Pengeluaran Bulan Ini</div>
-        <div className="text-2xl font-bold">Rp {totalThisMonth.toLocaleString("id-ID")}</div>
-      </div>
+      <Card className="mt-4 text-right">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm text-gray-600 font-normal">Total Pengeluaran Bulan Ini</CardTitle>
+        </CardHeader>
+
+        <CardContent>
+          <div className="text-2xl font-bold">Rp {totalThisMonth.toLocaleString("id-ID")}</div>
+        </CardContent>
+      </Card>
 
       <Pagination
         page={page}
@@ -385,7 +432,19 @@ export const MasterTransaction = () => {
           {/* AMOUNT */}
           <div>
             <label className="block mb-2 text-sm">Amount</label>
-            <Input type="number" min={0} value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
+            <Input
+              type="text"
+              value={amount}
+              onChange={(e) => {
+                const v = e.target.value;
+
+                // hanya angka
+                if (/^\d*$/.test(v)) {
+                  setAmount(v);
+                }
+              }}
+              placeholder="Masukkan jumlah"
+            />
           </div>
 
           {/* DESCRIPTION */}

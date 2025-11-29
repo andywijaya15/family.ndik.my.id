@@ -3,7 +3,7 @@ import type { Transaction } from "@/types/database";
 import { uppercaseData } from "@/utils/uppercase";
 
 // GET
-export const getTransactions = async (page: number, perPage: number, month?: number, year?: number) => {
+export const getTransactions = async (page: number, perPage: number, month?: number, year?: number, categoryId?: string) => {
     const from = (page - 1) * perPage;
     const to = page * perPage - 1;
 
@@ -23,6 +23,10 @@ export const getTransactions = async (page: number, perPage: number, month?: num
             );
     }
 
+    if (categoryId && categoryId !== "ALL") {
+    query = query.eq("category_id", categoryId);
+  }
+
     const { data, count, error } = await query;
     return { data: data as Transaction[] | null, count, error };
 };
@@ -35,7 +39,7 @@ export const createTransaction = async (payload: Partial<Transaction>) => {
         updated_at: new Date(),
     });
 
-    
+
 
     const { data, error } = await supabase
         .from("transactions")
