@@ -121,7 +121,7 @@ export const MasterTransaction = () => {
     const payload = {
       transaction_date: transactionDate,
       category_id: categoryId,
-      amountNumber,
+      amount: amountNumber,
       description,
       paid_by: paidBy,
       updated_by: userId,
