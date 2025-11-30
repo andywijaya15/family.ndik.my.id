@@ -3,6 +3,7 @@ import { FormDialog } from "@/components/FormDialog";
 import Layout from "@/components/layouts/Layout";
 import { Pagination } from "@/components/Pagination";
 import { PerPageSelect } from "@/components/PerPageSelect";
+import { StatsGrid } from "@/components/StatsGrid";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
@@ -106,11 +107,12 @@ export const MasterTransaction = () => {
   }, []);
 
   useEffect(() => {
-    fetchTransactions(1);
+    setPage(1);
+    fetchTransactions(1, perPage);
     fetchStats();
     fetchPaidStats();
     fetchTotalThisMonth();
-  }, [filterMonth, filterYear, filterCategory]);
+  }, [filterMonth, filterYear, filterCategory, perPage]);
 
   // CREATE / UPDATE
   const save = async () => {
@@ -140,7 +142,10 @@ export const MasterTransaction = () => {
       toast.success("Updated!");
     }
 
-    await fetchTransactions(1);
+    await fetchTransactions(1, perPage);
+    await fetchStats(); // tambahan
+    await fetchPaidStats(); // tambahan
+    await fetchTotalThisMonth(); // tambahan
     setOpenForm(false);
     resetForm();
   };
@@ -160,7 +165,10 @@ export const MasterTransaction = () => {
     if (error) return toast.error(error.message);
 
     toast.success("Deleted!");
-    await fetchTransactions(1);
+    await fetchTransactions(1, perPage);
+    await fetchStats(); // tambahan
+    await fetchPaidStats(); // tambahan
+    await fetchTotalThisMonth(); // tambahan
     resetForm();
     setOpenDelete(false);
   };
@@ -270,38 +278,10 @@ export const MasterTransaction = () => {
       </div>
 
       <h2 className="text-lg font-semibold mb-2">Overview by Paid By</h2>
+      <StatsGrid data={paidStats} subtitle="Total Dibayar Orang Ini" />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
-        {paidStats.map((item, index) => (
-          <Card key={index} className="p-4 rounded-xl shadow-md">
-            <CardHeader className="p-0 mb-2">
-              <CardTitle className="text-sm text-gray-600 font-normal">{item.name}</CardTitle>
-            </CardHeader>
-
-            <CardContent className="p-0">
-              <div className="text-2xl font-bold">Rp {item.total.toLocaleString("id-ID")}</div>
-              <div className="text-xs text-gray-500 mt-2">Total Dibayar Orang Ini</div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* OVERVIEW CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
-        {stats.map((item, index) => (
-          <Card key={index} className="p-4 rounded-xl shadow-md">
-            <CardHeader className="p-0 mb-2">
-              <CardTitle className="text-sm text-gray-600 font-normal">{item.name}</CardTitle>
-            </CardHeader>
-
-            <CardContent className="p-0">
-              <div className="text-2xl font-bold">Rp {item.total.toLocaleString("id-ID")}</div>
-
-              <div className="text-xs text-gray-500 mt-2">Total Pengeluaran Bulan Ini</div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <h2 className="text-lg font-semibold mb-2">Overview by Category</h2>
+      <StatsGrid data={stats} subtitle="Total Pengeluaran Bulan Ini" />
 
       <DataTable
         columns={[
@@ -406,12 +386,12 @@ export const MasterTransaction = () => {
         onPrev={() => {
           const newPage = page - 1;
           setPage(newPage);
-          fetchTransactions(newPage);
+          fetchTransactions(newPage, perPage);
         }}
         onNext={() => {
           const newPage = page + 1;
           setPage(newPage);
-          fetchTransactions(newPage);
+          fetchTransactions(newPage, perPage);
         }}
       />
 

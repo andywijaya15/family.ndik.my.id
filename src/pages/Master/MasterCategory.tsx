@@ -63,7 +63,7 @@ export const MasterCategory = () => {
     }
 
     setPage(1);
-    await fetchCategories(1);
+    await fetchCategories(1, perPage);
     setOpenForm(false);
     setSelected(null);
     setName("");
@@ -78,7 +78,7 @@ export const MasterCategory = () => {
 
     toast.success("Deleted!");
     setPage(1);
-    await fetchCategories(1);
+    await fetchCategories(1, perPage);
     setOpenDelete(false);
     setSelected(null);
   };
