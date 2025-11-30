@@ -3,7 +3,6 @@ import { FormDialog } from "@/components/FormDialog";
 import Layout from "@/components/layouts/Layout";
 import { Pagination } from "@/components/Pagination";
 import { PerPageSelect } from "@/components/PerPageSelect";
-import { StatsGrid } from "@/components/StatsGrid";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
@@ -276,12 +275,6 @@ export const MasterTransaction = () => {
           </SelectContent>
         </Select>
       </div>
-
-      <h2 className="text-lg font-semibold mb-2">Overview by Paid By</h2>
-      <StatsGrid data={paidStats} subtitle="Total Dibayar Orang Ini" />
-
-      <h2 className="text-lg font-semibold mb-2">Overview by Category</h2>
-      <StatsGrid data={stats} subtitle="Total Pengeluaran Bulan Ini" />
 
       <DataTable
         columns={[
