@@ -220,7 +220,7 @@ export const MasterTransaction = () => {
           }}
           className="w-full sm:w-auto"
         >
-          + Add Category
+          + Add Transaction
         </Button>
 
         <PerPageSelect
