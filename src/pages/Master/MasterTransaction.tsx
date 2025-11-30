@@ -14,8 +14,6 @@ import { getProfiles } from "@/repositories/profileRepository";
 import {
   createTransaction,
   deleteTransaction,
-  getExpenseOverviewByCategory,
-  getOverviewByPaidBy,
   getTransactions,
   updateTransaction,
 } from "@/repositories/transactionRepository";
@@ -64,8 +62,6 @@ export const MasterTransaction = () => {
   const [perPage, setPerPage] = useState(10);
   const totalPages = Math.ceil(totalTransactions / perPage);
 
-  const [stats, setStats] = useState<{ name: string; total: number }[]>([]);
-  const [paidStats, setPaidStats] = useState<{ name: string; total: number }[]>([]);
   const [totalThisMonth, setTotalThisMonth] = useState(0);
   const [filterCategory, setFilterCategory] = useState("ALL");
 
@@ -74,16 +70,6 @@ export const MasterTransaction = () => {
     if (error) return console.error(error);
     setTransactions(data || []);
     setTotalTransactions(count || 0);
-  };
-
-  const fetchStats = async () => {
-    const { data } = await getExpenseOverviewByCategory(filterMonth, filterYear);
-    setStats(data || []);
-  };
-
-  const fetchPaidStats = async () => {
-    const { data } = await getOverviewByPaidBy(filterMonth, filterYear);
-    setPaidStats(data || []);
   };
 
   const fetchTotalThisMonth = async () => {
@@ -108,8 +94,6 @@ export const MasterTransaction = () => {
   useEffect(() => {
     setPage(1);
     fetchTransactions(1, perPage);
-    fetchStats();
-    fetchPaidStats();
     fetchTotalThisMonth();
   }, [filterMonth, filterYear, filterCategory, perPage]);
 
@@ -142,8 +126,6 @@ export const MasterTransaction = () => {
     }
 
     await fetchTransactions(1, perPage);
-    await fetchStats(); // tambahan
-    await fetchPaidStats(); // tambahan
     await fetchTotalThisMonth(); // tambahan
     setOpenForm(false);
     resetForm();
@@ -165,8 +147,6 @@ export const MasterTransaction = () => {
 
     toast.success("Deleted!");
     await fetchTransactions(1, perPage);
-    await fetchStats(); // tambahan
-    await fetchPaidStats(); // tambahan
     await fetchTotalThisMonth(); // tambahan
     resetForm();
     setOpenDelete(false);
