@@ -2,6 +2,7 @@ import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { FormDialog } from "@/components/FormDialog";
 import Layout from "@/components/layouts/Layout";
 import { Pagination } from "@/components/Pagination";
+import { PerPageSelect } from "@/components/PerPageSelect";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
@@ -60,7 +61,7 @@ export const MasterTransaction = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [totalTransactions, setTotalTransactions] = useState(0);
   const [page, setPage] = useState(1);
-  const perPage = 10;
+  const [perPage, setPerPage] = useState(10);
   const totalPages = Math.ceil(totalTransactions / perPage);
 
   const [stats, setStats] = useState<{ name: string; total: number }[]>([]);
@@ -68,8 +69,8 @@ export const MasterTransaction = () => {
   const [totalThisMonth, setTotalThisMonth] = useState(0);
   const [filterCategory, setFilterCategory] = useState("ALL");
 
-  const fetchTransactions = async (page = 1) => {
-    const { data, count, error } = await getTransactions(page, perPage, filterMonth, filterYear, filterCategory);
+  const fetchTransactions = async (page = 1, limit = perPage) => {
+    const { data, count, error } = await getTransactions(page, limit, filterMonth, filterYear, filterCategory);
     if (error) return console.error(error);
     setTransactions(data || []);
     setTotalTransactions(count || 0);
@@ -203,15 +204,25 @@ export const MasterTransaction = () => {
 
   return (
     <Layout title="Transactions">
-      <div className="flex justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between gap-3 mb-4">
         <Button
           onClick={() => {
             resetForm();
             setOpenForm(true);
           }}
+          className="w-full sm:w-auto"
         >
-          + Add Transaction
+          + Add Category
         </Button>
+
+        <PerPageSelect
+          perPage={perPage}
+          onChange={(newPerPage) => {
+            setPerPage(newPerPage);
+            setPage(1);
+            fetchTransactions(1, newPerPage);
+          }}
+        />
       </div>
 
       <div className="flex gap-2 mb-4">

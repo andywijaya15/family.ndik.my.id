@@ -2,6 +2,7 @@ import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { FormDialog } from "@/components/FormDialog";
 import Layout from "@/components/layouts/Layout";
 import { Pagination } from "@/components/Pagination";
+import { PerPageSelect } from "@/components/PerPageSelect";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
@@ -23,12 +24,13 @@ export const MasterCategory = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [totalCategories, setTotalCategories] = useState(0);
   const [page, setPage] = useState(1);
-  const perPage = 10;
+  const [perPage, setPerPage] = useState(10);
   const totalPages = Math.ceil(totalCategories / perPage);
 
-  const fetchCategories = async (page = 1) => {
-    const { data, count, error } = await getCategories(page, perPage);
+  const fetchCategories = async (page = 1, perPageValue = perPage) => {
+    const { data, count, error } = await getCategories(page, perPageValue);
     if (error) return console.error(error);
+
     setCategories(data || []);
     setTotalCategories(count || 0);
   };
@@ -83,16 +85,26 @@ export const MasterCategory = () => {
 
   return (
     <Layout title="Master Category">
-      <div className="flex justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between gap-3 mb-4">
         <Button
           onClick={() => {
             setSelected(null);
             setName("");
             setOpenForm(true);
           }}
+          className="w-full sm:w-auto"
         >
           + Add Category
         </Button>
+
+        <PerPageSelect
+          perPage={perPage}
+          onChange={(newPerPage) => {
+            setPerPage(newPerPage);
+            setPage(1);
+            fetchCategories(1, newPerPage);
+          }}
+        />
       </div>
 
       <DataTable
