@@ -1,5 +1,4 @@
-import { AppSidebar } from "@/components/AppSidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import AppLayout from "@/components/AppLayout";
 import { AuthProvider } from "@/context/AuthContext";
 import Login from "@/pages/Auth/Login";
 import Home from "@/pages/Home";
@@ -11,52 +10,38 @@ import RouteGuard from "./RouteGuard";
 
 export const AppRouter = () => {
   return (
-    <>
-      <AuthProvider>
-        <BrowserRouter>
-          <SidebarProvider>
-            <AppSidebar />
-            <Suspense fallback={<div>Loading...</div>}>
-              <Routes>
-                <Route path="/" element={<Navigate to="/home" replace />} />
+    <AuthProvider>
+      <BrowserRouter>
+        <Suspense fallback={<div>Loading...</div>}>
+          <Routes>
+            {/* Redirect */}
+            <Route path="/" element={<Navigate to="/home" replace />} />
 
-                <Route
-                  path="/home"
-                  element={
-                    <RouteGuard>
-                      <Home />
-                    </RouteGuard>
-                  }
-                />
-                <Route
-                  path="/category"
-                  element={
-                    <RouteGuard>
-                      <MasterCategory />
-                    </RouteGuard>
-                  }
-                />
-                <Route
-                  path="/transaction"
-                  element={
-                    <RouteGuard>
-                      <MasterTransaction />
-                    </RouteGuard>
-                  }
-                />
-                <Route
-                  path="/login"
-                  element={
-                    <RouteGuard publicOnly>
-                      <Login />
-                    </RouteGuard>
-                  }
-                />
-              </Routes>
-            </Suspense>
-          </SidebarProvider>
-        </BrowserRouter>
-      </AuthProvider>
-    </>
+            {/* LOGIN – tanpa sidebar */}
+            <Route
+              path="/login"
+              element={
+                <RouteGuard publicOnly>
+                  <Login />
+                </RouteGuard>
+              }
+            />
+
+            {/* ROUTES DENGAN SIDEBAR + LAYOUT */}
+            <Route
+              element={
+                <RouteGuard>
+                  <AppLayout />
+                </RouteGuard>
+              }
+            >
+              <Route path="/home" element={<Home />} />
+              <Route path="/category" element={<MasterCategory />} />
+              <Route path="/transaction" element={<MasterTransaction />} />
+            </Route>
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    </AuthProvider>
   );
 };
