@@ -12,48 +12,63 @@ import {
 import { loadProfile } from "@/lib/loadProfile";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronUp, CircleDollarSign, Home, List, User2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 
-const items = [
-  { title: "Home", url: "/home", icon: Home },
-  { title: "Category", url: "/category", icon: List },
-  { title: "Transaction", url: "/transaction", icon: CircleDollarSign },
-];
-
-export function AppSidebar() {
+function AppSidebarBase() {
   const [fullName, setFullName] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
+
   const navigate = useNavigate();
 
+  const items = useMemo(
+    () => [
+      { title: "Home", url: "/home", icon: Home },
+      { title: "Category", url: "/category", icon: List },
+      { title: "Transaction", url: "/transaction", icon: CircleDollarSign },
+    ],
+    []
+  );
+
   useEffect(() => {
+    let mounted = true;
+
     const fetch = async () => {
       const { profile, user } = await loadProfile();
+      if (!mounted) return;
+
       setFullName(profile?.full_name || user?.email || "User");
+      setIsLoading(false);
     };
+
     fetch();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error("Logout failed:", error.message);
-      return;
-    }
-    navigate("/login");
+    if (!error) navigate("/login");
   };
+
+  const displayedName = isLoading ? <span className="opacity-0">Loading</span> : fullName;
 
   return (
     <>
       {/* DESKTOP SIDEBAR */}
       <Sidebar className="hidden md:flex">
         <SidebarHeader />
+
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
                 {items.map((item) => {
                   const active = location.pathname.startsWith(item.url);
+
                   return (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton
@@ -79,9 +94,10 @@ export function AppSidebar() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <SidebarMenuButton>
-                    <User2 /> {fullName || "Loading..."} <ChevronUp className="ml-auto" />
+                    <User2 /> {displayedName} <ChevronUp className="ml-auto" />
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
+
                 <DropdownMenuContent side="top" className="w-[--radix-popper-anchor-width]">
                   <DropdownMenuItem onClick={handleLogout}>Sign Out</DropdownMenuItem>
                 </DropdownMenuContent>
@@ -91,7 +107,7 @@ export function AppSidebar() {
         </SidebarFooter>
       </Sidebar>
 
-      {/* MOBILE BOTTOM NAVIGATION */}
+      {/* MOBILE NAV */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t md:hidden">
         <div className="flex justify-around items-center py-2">
           {items.map((item) => {
@@ -109,12 +125,12 @@ export function AppSidebar() {
             );
           })}
 
-          {/* --- NEW: USER MENU MOBILE --- */}
+          {/* USER */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex flex-col items-center text-xs text-muted-foreground">
                 <User2 className="h-5 w-5 mb-1" />
-                <span>{fullName}</span>
+                {displayedName}
               </button>
             </DropdownMenuTrigger>
 
@@ -127,3 +143,5 @@ export function AppSidebar() {
     </>
   );
 }
+
+export const AppSidebar = React.memo(AppSidebarBase);

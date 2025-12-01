@@ -1,3 +1,5 @@
+import { AppSidebar } from "@/components/AppSidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { AuthProvider } from "@/context/AuthContext";
 import Login from "@/pages/Auth/Login";
 import Home from "@/pages/Home";
@@ -12,44 +14,47 @@ export const AppRouter = () => {
     <>
       <AuthProvider>
         <BrowserRouter>
-          <Suspense fallback={<div>Loading...</div>}>
-            <Routes>
-              <Route path="/" element={<Navigate to="/home" replace />} />
+          <SidebarProvider>
+            <AppSidebar />
+            <Suspense fallback={<div>Loading...</div>}>
+              <Routes>
+                <Route path="/" element={<Navigate to="/home" replace />} />
 
-              <Route
-                path="/home"
-                element={
-                  <RouteGuard>
-                    <Home />
-                  </RouteGuard>
-                }
-              />
-              <Route
-                path="/category"
-                element={
-                  <RouteGuard>
-                    <MasterCategory />
-                  </RouteGuard>
-                }
-              />
-              <Route
-                path="/transaction"
-                element={
-                  <RouteGuard>
-                    <MasterTransaction />
-                  </RouteGuard>
-                }
-              />
-              <Route
-                path="/login"
-                element={
-                  <RouteGuard publicOnly>
-                    <Login />
-                  </RouteGuard>
-                }
-              />
-            </Routes>
-          </Suspense>
+                <Route
+                  path="/home"
+                  element={
+                    <RouteGuard>
+                      <Home />
+                    </RouteGuard>
+                  }
+                />
+                <Route
+                  path="/category"
+                  element={
+                    <RouteGuard>
+                      <MasterCategory />
+                    </RouteGuard>
+                  }
+                />
+                <Route
+                  path="/transaction"
+                  element={
+                    <RouteGuard>
+                      <MasterTransaction />
+                    </RouteGuard>
+                  }
+                />
+                <Route
+                  path="/login"
+                  element={
+                    <RouteGuard publicOnly>
+                      <Login />
+                    </RouteGuard>
+                  }
+                />
+              </Routes>
+            </Suspense>
+          </SidebarProvider>
         </BrowserRouter>
       </AuthProvider>
     </>

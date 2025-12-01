@@ -1,15 +1,11 @@
 // Layout.tsx
-import { AppSidebar } from "../AppSidebar";
 import { ModeToggle } from "../ModeToggle";
-import { SidebarProvider, SidebarTrigger } from "../ui/sidebar";
+import { SidebarTrigger } from "../ui/sidebar";
 import { Toaster } from "../ui/sonner";
 
 export default function Layout({ children, title }: { children: React.ReactNode; title?: string }) {
   return (
-    <SidebarProvider>
-      {/* Sidebar (hanya terlihat di md ke atas) */}
-      <AppSidebar />
-
+    <>
       <Toaster position="top-right" />
 
       {/* Main content */}
@@ -27,6 +23,6 @@ export default function Layout({ children, title }: { children: React.ReactNode;
 
         {children}
       </main>
-    </SidebarProvider>
+    </>
   );
 }
