@@ -31,7 +31,6 @@ export function AppSidebar() {
       const { profile, user } = await loadProfile();
       setFullName(profile?.full_name || user?.email || "User");
     };
-
     fetch();
   }, []);
 
@@ -109,6 +108,20 @@ export function AppSidebar() {
               </Link>
             );
           })}
+
+          {/* --- NEW: USER MENU MOBILE --- */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex flex-col items-center text-xs text-muted-foreground">
+                <User2 className="h-5 w-5 mb-1" />
+                <span>{fullName}</span>
+              </button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent className="w-40">
+              <DropdownMenuItem onClick={handleLogout}>Sign Out</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </nav>
     </>
