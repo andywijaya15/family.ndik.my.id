@@ -164,12 +164,16 @@ export const MasterTransaction = () => {
   );
 
   const profileOptions = useMemo(
-    () =>
-      profiles.map((p) => (
-        <SelectItem key={p.id} value={p.id}>
-          {p.full_name}
-        </SelectItem>
-      )),
+    () => (
+      <>
+        <SelectItem value="__SHARED__">EXPENSE</SelectItem>
+        {profiles.map((p) => (
+          <SelectItem key={p.id} value={p.id}>
+            {p.full_name}
+          </SelectItem>
+        ))}
+      </>
+    ),
     [profiles]
   );
 
@@ -294,7 +298,9 @@ export const MasterTransaction = () => {
 
               return (
                 <div>
-                  {name ? (
+                  {id === null ? (
+                    <span className="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-700">EXPENSE</span>
+                  ) : name ? (
                     <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">{name}</span>
                   ) : (
                     <span className="text-gray-400 text-xs">-</span>
@@ -424,7 +430,13 @@ export const MasterTransaction = () => {
           {/* PAID BY */}
           <div>
             <label className="block mb-2 text-sm">Paid By</label>
-            <Select value={paidBy ?? ""} onValueChange={setPaidBy}>
+            <Select
+              value={paidBy ?? "__SHARED__"}
+              onValueChange={(val) => {
+                if (val === "__SHARED__") setPaidBy(null);
+                else setPaidBy(val);
+              }}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select person" />
               </SelectTrigger>
