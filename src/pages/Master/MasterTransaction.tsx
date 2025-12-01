@@ -1,6 +1,5 @@
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { FormDialog } from "@/components/FormDialog";
-import Layout from "@/components/layouts/Layout";
 import { Pagination } from "@/components/Pagination";
 import { PerPageSelect } from "@/components/PerPageSelect";
 import { Button } from "@/components/ui/button";
@@ -19,6 +18,7 @@ import {
 } from "@/repositories/transactionRepository";
 import type { Category, Profile, Transaction } from "@/types/database";
 import { useEffect, useMemo, useState } from "react";
+import { useOutletContext } from "react-router";
 import { toast } from "sonner";
 
 const months = [
@@ -37,6 +37,12 @@ const months = [
 ];
 
 export const MasterTransaction = () => {
+  const { setTitle } = useOutletContext<{ setTitle: (v: string) => void }>();
+
+  useEffect(() => {
+    setTitle("Transactions");
+  }, []);
+
   const { session } = useAuth();
   const userId = session?.user?.id ?? null;
 
@@ -194,7 +200,7 @@ export const MasterTransaction = () => {
   }, [categories]);
 
   return (
-    <Layout title="Transactions">
+    <>
       <div className="flex flex-col sm:flex-row sm:justify-between gap-3 mb-4">
         <Button
           onClick={() => {
@@ -452,6 +458,6 @@ export const MasterTransaction = () => {
         itemName={selected?.description ?? undefined}
         onDelete={remove}
       />
-    </Layout>
+    </>
   );
 };

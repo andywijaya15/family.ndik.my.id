@@ -1,6 +1,5 @@
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { FormDialog } from "@/components/FormDialog";
-import Layout from "@/components/layouts/Layout";
 import { Pagination } from "@/components/Pagination";
 import { PerPageSelect } from "@/components/PerPageSelect";
 import { Button } from "@/components/ui/button";
@@ -10,9 +9,16 @@ import { useAuth } from "@/context/AuthContext";
 import { createCategory, deleteCategory, getCategories, updateCategory } from "@/repositories/categoryRepository";
 import type { Category } from "@/types/database";
 import { useEffect, useState } from "react";
+import { useOutletContext } from "react-router";
 import { toast } from "sonner";
 
 export const MasterCategory = () => {
+  const { setTitle } = useOutletContext<{ setTitle: (v: string) => void }>();
+
+  useEffect(() => {
+    setTitle("Master Category");
+  }, []);
+
   const { session } = useAuth();
   const userId = session?.user?.id ?? null;
 
@@ -84,7 +90,7 @@ export const MasterCategory = () => {
   };
 
   return (
-    <Layout title="Master Category">
+    <>
       <div className="flex flex-col sm:flex-row sm:justify-between gap-3 mb-4">
         <Button
           onClick={() => {
@@ -174,6 +180,6 @@ export const MasterCategory = () => {
       </FormDialog>
 
       <ConfirmDeleteDialog open={openDelete} onOpenChange={setOpenDelete} itemName={selected?.name} onDelete={remove} />
-    </Layout>
+    </>
   );
 };
