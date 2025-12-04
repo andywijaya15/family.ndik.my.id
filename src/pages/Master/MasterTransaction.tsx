@@ -3,20 +3,22 @@ import { FormDialog } from "@/components/FormDialog";
 import { Pagination } from "@/components/Pagination";
 import { PerPageSelect } from "@/components/PerPageSelect";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/context/AuthContext";
 import { getCategories } from "@/repositories/categoryRepository";
 import { getProfiles } from "@/repositories/profileRepository";
 import {
-  createTransaction,
-  deleteTransaction,
-  getTransactions,
-  updateTransaction,
+    createTransaction,
+    deleteTransaction,
+    getTransactions,
+    updateTransaction,
 } from "@/repositories/transactionRepository";
 import type { Category, Profile, Transaction } from "@/types/database";
+import { Calendar, CircleDollarSign, DollarSign, Edit2, FileText, Filter, Plus, Receipt, Trash2, TrendingDown, User } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router";
 import { toast } from "sonner";
@@ -124,11 +126,11 @@ export const MasterTransaction = () => {
     if (!selected) {
       const { error } = await createTransaction(payload);
       if (error) return toast.error(error.message);
-      toast.success("Created!");
+      toast.success("Transaction created successfully!");
     } else {
       const { error } = await updateTransaction(selected.id, payload);
       if (error) return toast.error(error.message);
-      toast.success("Updated!");
+      toast.success("Transaction updated successfully!");
     }
 
     await fetchTransactions(1, perPage);
@@ -151,7 +153,7 @@ export const MasterTransaction = () => {
     const { error } = await deleteTransaction(selected.id, userId);
     if (error) return toast.error(error.message);
 
-    toast.success("Deleted!");
+    toast.success("Transaction deleted successfully!");
     await fetchTransactions(1, perPage);
     await fetchTotalThisMonth(); // tambahan
     resetForm();
@@ -200,171 +202,355 @@ export const MasterTransaction = () => {
   }, [categories]);
 
   return (
-    <>
-      <div className="flex flex-col sm:flex-row sm:justify-between gap-3 mb-4">
+    <div className="space-y-6 pb-6">
+      {/* Header Section */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="bg-primary/10 text-primary flex size-12 items-center justify-center rounded-xl dark:bg-primary/20">
+            <CircleDollarSign className="size-6" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold">Transactions</h2>
+            <p className="text-muted-foreground text-sm">Track and manage your expenses</p>
+          </div>
+        </div>
+
         <Button
           onClick={() => {
             resetForm();
             setOpenForm(true);
           }}
-          className="w-full sm:w-auto"
+          className="shadow-lg shadow-primary/20 transition-all hover:shadow-xl hover:shadow-primary/30"
+          size="lg"
         >
-          + Add Transaction
+          <Plus className="mr-2 size-4" />
+          Add Transaction
         </Button>
-
-        <PerPageSelect
-          perPage={perPage}
-          onChange={(newPerPage) => {
-            setPerPage(newPerPage);
-            setPage(1);
-            fetchTransactions(1, newPerPage);
-          }}
-        />
       </div>
 
-      <div className="flex gap-2 mb-4">
-        {/* Filter Bulan */}
-        <Select value={filterMonth.toString()} onValueChange={(val) => setFilterMonth(Number(val))}>
-          <SelectTrigger className="border p-2 rounded w-32">
-            <SelectValue>{months[filterMonth - 1]}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {months.map((m, idx) => (
-              <SelectItem key={idx} value={(idx + 1).toString()}>
-                {m}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Filter Tahun */}
-        <Select value={filterYear.toString()} onValueChange={(val) => setFilterYear(Number(val))}>
-          <SelectTrigger className="border p-2 rounded w-24">
-            <SelectValue>{filterYear}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => (
-              <SelectItem key={y} value={y.toString()}>
-                {y}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={filterCategory ?? ""} onValueChange={setFilterCategory}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="All Categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">All Categories</SelectItem>
-            {categories.map((cat) => (
-              <SelectItem key={cat.id} value={cat.id}>
-                {cat.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <DataTable
-        columns={[
-          { accessorKey: "transaction_date", header: "Date" },
-          {
-            accessorKey: "category_id",
-            header: "Category",
-            cell: ({ row }) => {
-              const id = row.original.category_id;
-              const name = id ? categoryMap[id] : null;
-
-              return (
-                <div>
-                  {name ? (
-                    <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">{name}</span>
-                  ) : (
-                    <span className="text-gray-400 text-xs">-</span>
-                  )}
+      {/* Stats & Filters Card */}
+      <Card className="border-border/50 dark:border-border/30">
+        <CardContent className="p-4 md:p-6">
+          <div className="flex flex-col gap-4 md:gap-6">
+            {/* Total This Month */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3 md:gap-4">
+                <div className="bg-destructive/10 text-destructive flex size-12 items-center justify-center rounded-xl dark:bg-destructive/20 dark:text-red-400 md:size-14">
+                  <TrendingDown className="size-6 md:size-7" />
                 </div>
-              );
-            },
-          },
-          {
-            accessorKey: "amount",
-            header: "Amount",
-            cell: ({ row }) => {
-              const amount = row.original.amount || 0;
-              return <div className="font-medium">Rp {amount.toLocaleString("id-ID")}</div>;
-            },
-          },
-          {
-            accessorKey: "paid_by",
-            header: "Paid By",
-            cell: ({ row }) => {
-              const id = row.original.paid_by;
-              const name = id ? profileMap[id] : null;
-
-              return (
                 <div>
-                  {id === null ? (
-                    <span className="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-700">EXPENSE</span>
-                  ) : name ? (
-                    <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">{name}</span>
-                  ) : (
-                    <span className="text-gray-400 text-xs">-</span>
-                  )}
+                  <p className="text-muted-foreground text-xs font-medium md:text-sm">Total Expenses This Period</p>
+                  <p className="text-2xl font-bold md:text-3xl">Rp {totalThisMonth.toLocaleString("id-ID")}</p>
                 </div>
-              );
-            },
-          },
-
-          { accessorKey: "description", header: "Description" },
-          {
-            id: "actions",
-            cell: ({ row }) => (
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => {
-                    const t = row.original;
-                    setSelected(t);
-                    setTransactionDate(t.transaction_date);
-                    setCategoryId(t.category_id);
-                    setAmount(String(t.amount));
-                    setDescription(t.description || "");
-                    setPaidBy(t.paid_by);
-                    setOpenForm(true);
-                  }}
-                >
-                  Edit
-                </Button>
-
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => {
-                    setSelected(row.original);
-                    setOpenDelete(true);
-                  }}
-                >
-                  Delete
-                </Button>
               </div>
-            ),
-          },
-        ]}
-        data={transactions}
-      />
+              <div className="hidden sm:block">
+                <PerPageSelect
+                  perPage={perPage}
+                  onChange={(newPerPage) => {
+                    setPerPage(newPerPage);
+                    setPage(1);
+                    fetchTransactions(1, newPerPage);
+                  }}
+                />
+              </div>
+            </div>
 
-      <Card className="mt-4 text-right">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm text-gray-600 font-normal">Total Pengeluaran Bulan Ini</CardTitle>
-        </CardHeader>
+            {/* Filters */}
+            <div className="border-t pt-4">
+              <div className="mb-3 flex items-center gap-2">
+                <Filter className="text-muted-foreground size-4" />
+                <span className="text-sm font-medium">Filters</span>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Calendar className="text-muted-foreground size-4" />
+                  <div className="flex flex-1 gap-2 sm:flex-initial">
+                    <Select value={filterMonth.toString()} onValueChange={(val) => setFilterMonth(Number(val))}>
+                      <SelectTrigger className="flex-1 sm:w-36">
+                        <SelectValue>{months[filterMonth - 1]}</SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {months.map((m, idx) => (
+                          <SelectItem key={idx} value={(idx + 1).toString()}>
+                            {m}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
 
-        <CardContent>
-          <div className="text-2xl font-bold">Rp {totalThisMonth.toLocaleString("id-ID")}</div>
+                    <Select value={filterYear.toString()} onValueChange={(val) => setFilterYear(Number(val))}>
+                      <SelectTrigger className="w-24 sm:w-28">
+                        <SelectValue>{filterYear}</SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                          <SelectItem key={y} value={y.toString()}>
+                            {y}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <Select value={filterCategory ?? ""} onValueChange={setFilterCategory}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Categories</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Mobile PerPage */}
+              <div className="mt-3 sm:hidden">
+                <PerPageSelect
+                  perPage={perPage}
+                  onChange={(newPerPage) => {
+                    setPerPage(newPerPage);
+                    setPage(1);
+                    fetchTransactions(1, newPerPage);
+                  }}
+                />
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
+      {/* Desktop Table View */}
+      <Card className="border-border/50 hidden md:block">
+        <CardContent className="p-6">
+          <DataTable
+            columns={[
+              {
+                accessorKey: "transaction_date",
+                header: "Date",
+                cell: ({ row }) => (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="text-muted-foreground size-4" />
+                    <span className="font-medium">{row.original.transaction_date}</span>
+                  </div>
+                ),
+              },
+              {
+                accessorKey: "category_id",
+                header: "Category",
+                cell: ({ row }) => {
+                  const id = row.original.category_id;
+                  const name = id ? categoryMap[id] : null;
+
+                  return (
+                    <div>
+                      {name ? (
+                        <span className="bg-primary/10 text-primary inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium dark:bg-primary/20 dark:text-primary">
+                          <Receipt className="size-3" />
+                          {name}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">-</span>
+                      )}
+                    </div>
+                  );
+                },
+              },
+              {
+                accessorKey: "amount",
+                header: "Amount",
+                cell: ({ row }) => {
+                  const amount = row.original.amount || 0;
+                  return (
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="text-destructive size-4" />
+                      <span className="font-bold">Rp {amount.toLocaleString("id-ID")}</span>
+                    </div>
+                  );
+                },
+              },
+              {
+                accessorKey: "paid_by",
+                header: "Paid By",
+                cell: ({ row }) => {
+                  const id = row.original.paid_by;
+                  const name = id ? profileMap[id] : null;
+
+                  return (
+                    <div>
+                      {id === null ? (
+                        <span className="bg-secondary/10 text-secondary-foreground inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium dark:bg-secondary/20">
+                          <User className="size-3" />
+                          SHARED
+                        </span>
+                      ) : name ? (
+                        <span className="bg-blue-500/10 text-blue-700 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium dark:bg-blue-500/20 dark:text-blue-400">
+                          <User className="size-3" />
+                          {name}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">-</span>
+                      )}
+                    </div>
+                  );
+                },
+              },
+              {
+                accessorKey: "description",
+                header: "Description",
+                cell: ({ row }) => (
+                  <span className="text-muted-foreground text-sm">
+                    {row.original.description || "-"}
+                  </span>
+                ),
+              },
+              {
+                id: "actions",
+                header: "Actions",
+                cell: ({ row }) => (
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        const t = row.original;
+                        setSelected(t);
+                        setTransactionDate(t.transaction_date);
+                        setCategoryId(t.category_id);
+                        setAmount(String(t.amount));
+                        setDescription(t.description || "");
+                        setPaidBy(t.paid_by);
+                        setOpenForm(true);
+                      }}
+                      className="hover:bg-primary/10 hover:text-primary transition-colors"
+                    >
+                      <Edit2 className="mr-1 size-3" />
+                      Edit
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => {
+                        setSelected(row.original);
+                        setOpenDelete(true);
+                      }}
+                      className="hover:bg-destructive/90 transition-colors"
+                    >
+                      <Trash2 className="mr-1 size-3" />
+                      Delete
+                    </Button>
+                  </div>
+                ),
+              },
+            ]}
+            data={transactions}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Mobile Card View */}
+      <div className="space-y-3 md:hidden">
+        {transactions.length === 0 ? (
+          <Card className="border-border/50 dark:border-border/30">
+            <CardContent className="p-8 text-center">
+              <CircleDollarSign className="text-muted-foreground mx-auto mb-3 size-12" />
+              <p className="text-muted-foreground text-sm">No transactions found</p>
+            </CardContent>
+          </Card>
+        ) : (
+          transactions.map((transaction) => {
+            const categoryName = transaction.category_id ? categoryMap[transaction.category_id] : null;
+            const paidByName = transaction.paid_by ? profileMap[transaction.paid_by] : null;
+
+            return (
+              <Card key={transaction.id} className="border-border/50 overflow-hidden dark:border-border/30">
+                <CardContent className="p-4">
+                  <div className="space-y-3">
+                    {/* Header: Date & Amount */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="text-muted-foreground size-4" />
+                        <span className="text-sm font-medium">{transaction.transaction_date}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <DollarSign className="text-destructive size-4 dark:text-red-400" />
+                        <span className="text-lg font-bold">Rp {transaction.amount.toLocaleString("id-ID")}</span>
+                      </div>
+                    </div>
+
+                    {/* Category & Paid By */}
+                    <div className="flex flex-wrap gap-2">
+                      {categoryName && (
+                        <span className="bg-primary/10 text-primary inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium dark:bg-primary/20">
+                          <Receipt className="size-3" />
+                          {categoryName}
+                        </span>
+                      )}
+                      {transaction.paid_by === null ? (
+                        <span className="bg-secondary/10 text-secondary-foreground inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium dark:bg-secondary/20">
+                          <User className="size-3" />
+                          SHARED
+                        </span>
+                      ) : paidByName ? (
+                        <span className="bg-blue-500/10 text-blue-700 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium dark:bg-blue-500/20 dark:text-blue-400">
+                          <User className="size-3" />
+                          {paidByName}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    {/* Description */}
+                    {transaction.description && (
+                      <p className="text-muted-foreground text-sm">{transaction.description}</p>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => {
+                          setSelected(transaction);
+                          setTransactionDate(transaction.transaction_date);
+                          setCategoryId(transaction.category_id);
+                          setAmount(String(transaction.amount));
+                          setDescription(transaction.description || "");
+                          setPaidBy(transaction.paid_by);
+                          setOpenForm(true);
+                        }}
+                        className="hover:bg-primary/10 hover:text-primary flex-1 transition-colors dark:hover:bg-primary/20"
+                      >
+                        <Edit2 className="mr-1 size-3" />
+                        Edit
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => {
+                          setSelected(transaction);
+                          setOpenDelete(true);
+                        }}
+                        className="hover:bg-destructive/90 flex-1 transition-colors"
+                      >
+                        <Trash2 className="mr-1 size-3" />
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
+      </div>
+
+      {/* Pagination */}
       <Pagination
         page={page}
         totalPages={totalPages}
@@ -380,23 +566,35 @@ export const MasterTransaction = () => {
         }}
       />
 
-      {/* FORM */}
+      {/* Form Dialog */}
       <FormDialog
         open={openForm}
         onOpenChange={setOpenForm}
-        title={selected ? "Update Transaction" : "Add Transaction"}
+        title={selected ? "Update Transaction" : "Add New Transaction"}
         onSubmit={save}
+        submitLabel={selected ? "Update Transaction" : "Create Transaction"}
       >
         <div className="space-y-4">
           {/* DATE */}
-          <div>
-            <label className="block mb-2 text-sm">Transaction Date</label>
-            <Input type="date" value={transactionDate} onChange={(e) => setTransactionDate(e.target.value)} />
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Calendar className="size-4" />
+              Transaction Date
+            </Label>
+            <Input
+              type="date"
+              value={transactionDate}
+              onChange={(e) => setTransactionDate(e.target.value)}
+              className="w-full"
+            />
           </div>
 
           {/* CATEGORY */}
-          <div>
-            <label className="block mb-2 text-sm">Category</label>
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Receipt className="size-4" />
+              Category
+            </Label>
             <Select value={categoryId ?? ""} onValueChange={setCategoryId}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select category" />
@@ -406,36 +604,48 @@ export const MasterTransaction = () => {
           </div>
 
           {/* AMOUNT */}
-          <div>
-            <label className="block mb-2 text-sm">Amount</label>
-            <Input
-              type="text"
-              value={amount}
-              onChange={(e) => {
-                const v = e.target.value;
-
-                // hanya angka
-                if (/^\d*$/.test(v)) {
-                  setAmount(v);
-                }
-              }}
-              placeholder="Masukkan jumlah"
-            />
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <DollarSign className="size-4" />
+              Amount
+            </Label>
+            <div className="relative">
+              <span className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 text-sm">Rp</span>
+              <Input
+                type="text"
+                value={amount}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (/^\d*$/.test(v)) {
+                    setAmount(v);
+                  }
+                }}
+                placeholder="0"
+                className="pl-10"
+              />
+            </div>
+            <p className="text-muted-foreground text-xs">Enter amount in Rupiah (numbers only)</p>
           </div>
 
           {/* DESCRIPTION */}
-          <div>
-            <label className="block mb-2 text-sm">Description</label>
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <FileText className="size-4" />
+              Description
+            </Label>
             <Input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter description"
+              placeholder="e.g., Grocery shopping, Fuel"
             />
           </div>
 
           {/* PAID BY */}
-          <div>
-            <label className="block mb-2 text-sm">Paid By</label>
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <User className="size-4" />
+              Paid By
+            </Label>
             <Select
               value={paidBy ?? "__SHARED__"}
               onValueChange={(val) => {
@@ -448,16 +658,18 @@ export const MasterTransaction = () => {
               </SelectTrigger>
               <SelectContent>{profileOptions}</SelectContent>
             </Select>
+            <p className="text-muted-foreground text-xs">Select who paid for this expense</p>
           </div>
         </div>
       </FormDialog>
 
+      {/* Delete Confirmation */}
       <ConfirmDeleteDialog
         open={openDelete}
         onOpenChange={setOpenDelete}
         itemName={selected?.description ?? undefined}
         onDelete={remove}
       />
-    </>
+    </div>
   );
 };
