@@ -1,6 +1,8 @@
+import { LoadingCards } from "@/components/LoadingState";
 import { StatsGrid } from "@/components/StatsGrid";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getExpenseOverviewByCategory, getOverviewByPaidBy } from "@/repositories/transactionRepository";
 import { Calendar, TrendingDown, TrendingUp, Users, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -33,8 +35,10 @@ export default function Home() {
 
   const [paidStats, setPaidStats] = useState<{ name: string; total: number }[]>([]);
   const [categoryStats, setCategoryStats] = useState<{ name: string; total: number }[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const fetchStats = async () => {
+    setLoading(true);
     try {
       const paid = await getOverviewByPaidBy(filterMonth, filterYear);
       setPaidStats(paid.data || []);
@@ -43,6 +47,8 @@ export default function Home() {
       setCategoryStats(cat.data || []);
     } catch (error) {
       console.error("Failed to fetch stats:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -111,7 +117,10 @@ export default function Home() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {loading ? (
+        <LoadingCards count={3} />
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card className="group overflow-hidden border-border/50 transition-all hover:shadow-lg dark:border-border/30 dark:hover:shadow-destructive/10">
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
@@ -157,6 +166,7 @@ export default function Home() {
           </CardContent>
         </Card>
       </div>
+      )}
 
       {/* Paid By Section */}
       <div className="space-y-4">
@@ -169,7 +179,23 @@ export default function Home() {
             <p className="text-muted-foreground text-sm">Who paid what this period</p>
           </div>
         </div>
-        <StatsGrid data={paidStats} subtitle="Total paid by this member" />
+        {loading ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i} className="border-border/50 dark:border-border/30">
+                <CardContent className="p-4">
+                  <div className="space-y-3">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-8 w-32" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <StatsGrid data={paidStats} subtitle="Total paid by this member" />
+        )}
       </div>
 
       {/* Category Section */}
@@ -183,7 +209,23 @@ export default function Home() {
             <p className="text-muted-foreground text-sm">Breakdown of spending categories</p>
           </div>
         </div>
-        <StatsGrid data={categoryStats} subtitle="Total expenses this period" />
+        {loading ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i} className="border-border/50 dark:border-border/30">
+                <CardContent className="p-4">
+                  <div className="space-y-3">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-8 w-32" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <StatsGrid data={categoryStats} subtitle="Total expenses this period" />
+        )}
       </div>
     </div>
   );
