@@ -12,6 +12,7 @@ export const getTransactions = async (page: number, perPage: number, month?: num
         .select("*", { count: "exact" })
         .is("deleted_at", null)
         .order("transaction_date", { ascending: true })
+        .order("id", { ascending: true })
         .range(from, to);
 
     if (month && year) {
@@ -24,8 +25,8 @@ export const getTransactions = async (page: number, perPage: number, month?: num
     }
 
     if (categoryId && categoryId !== "ALL") {
-    query = query.eq("category_id", categoryId);
-  }
+        query = query.eq("category_id", categoryId);
+    }
 
     const { data, count, error } = await query;
     return { data: data as Transaction[] | null, count, error };
