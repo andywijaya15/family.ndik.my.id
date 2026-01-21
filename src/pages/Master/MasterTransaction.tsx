@@ -7,18 +7,36 @@ import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/context/AuthContext";
 import { getCategories } from "@/repositories/categoryRepository";
 import { getProfiles } from "@/repositories/profileRepository";
 import {
-    createTransaction,
-    deleteTransaction,
-    getTransactions,
-    updateTransaction,
+  createTransaction,
+  deleteTransaction,
+  getTransactions,
+  updateTransaction,
 } from "@/repositories/transactionRepository";
 import type { Category, Profile, Transaction } from "@/types/database";
-import { Calendar, CircleDollarSign, DollarSign, Edit2, FileText, Filter, Plus, Receipt, Trash2, TrendingDown, User } from "lucide-react";
+import {
+  Calendar,
+  CircleDollarSign,
+  DollarSign,
+  Edit2,
+  FileText,
+  Filter,
+  Plus,
+  Receipt,
+  Trash2,
+  TrendingDown,
+  User,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router";
 import { toast } from "sonner";
@@ -48,10 +66,16 @@ export const MasterTransaction = () => {
   const { session } = useAuth();
   const userId = session?.user?.id ?? null;
 
-  const [filterMonth, setFilterMonth] = useState<number>(new Date().getMonth() + 1);
-  const [filterYear, setFilterYear] = useState<number>(new Date().getFullYear());
+  const [filterMonth, setFilterMonth] = useState<number>(
+    new Date().getMonth() + 1,
+  );
+  const [filterYear, setFilterYear] = useState<number>(
+    new Date().getFullYear(),
+  );
 
-  const [transactionDate, setTransactionDate] = useState(new Date().toISOString().split("T")[0]);
+  const [transactionDate, setTransactionDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [amount, setAmount] = useState<string>("");
   const [description, setDescription] = useState("");
@@ -74,7 +98,13 @@ export const MasterTransaction = () => {
   const [filterCategory, setFilterCategory] = useState("ALL");
 
   const fetchTransactions = async (page = 1, limit = perPage) => {
-    const { data, count, error } = await getTransactions(page, limit, filterMonth, filterYear, filterCategory);
+    const { data, count, error } = await getTransactions(
+      page,
+      limit,
+      filterMonth,
+      filterYear,
+      filterCategory,
+    );
     if (error) return console.error(error);
     setTransactions(data || []);
     setTotalTransactions(count || 0);
@@ -110,7 +140,8 @@ export const MasterTransaction = () => {
     if (!transactionDate) return toast.error("Transaction date required");
     if (!categoryId) return toast.error("Category required");
     const amountNumber = amount === "" ? 0 : Number(amount);
-    if (!amountNumber || amountNumber <= 0) return toast.error("Amount invalid");
+    if (!amountNumber || amountNumber <= 0)
+      return toast.error("Amount invalid");
 
     const payload = {
       transaction_date: transactionDate,
@@ -139,9 +170,23 @@ export const MasterTransaction = () => {
     resetForm();
   };
 
+  const getDefaultTransactionDate = () => {
+    const today = new Date();
+
+    const isCurrentMonth =
+      filterYear === today.getFullYear() &&
+      filterMonth === today.getMonth() + 1;
+
+    if (isCurrentMonth) {
+      return today.toISOString().split("T")[0];
+    }
+
+    return new Date(filterYear, filterMonth, 1).toISOString().split("T")[0];
+  };
+
   const resetForm = () => {
     setSelected(null);
-    setTransactionDate(new Date().toISOString().split("T")[0]);
+    setTransactionDate(getDefaultTransactionDate);
     setCategoryId(null);
     setAmount("");
     setDescription("");
@@ -168,7 +213,7 @@ export const MasterTransaction = () => {
           {cat.name}
         </SelectItem>
       )),
-    [categories]
+    [categories],
   );
 
   const profileOptions = useMemo(
@@ -182,7 +227,7 @@ export const MasterTransaction = () => {
         ))}
       </>
     ),
-    [profiles]
+    [profiles],
   );
 
   const profileMap = useMemo(() => {
@@ -211,7 +256,9 @@ export const MasterTransaction = () => {
           </div>
           <div>
             <h2 className="text-2xl font-bold">Transactions</h2>
-            <p className="text-muted-foreground text-sm">Track and manage your expenses</p>
+            <p className="text-muted-foreground text-sm">
+              Track and manage your expenses
+            </p>
           </div>
         </div>
 
@@ -239,8 +286,12 @@ export const MasterTransaction = () => {
                   <TrendingDown className="size-6 md:size-7" />
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-xs font-medium md:text-sm">Total Expenses This Period</p>
-                  <p className="text-2xl font-bold md:text-3xl">Rp {totalThisMonth.toLocaleString("id-ID")}</p>
+                  <p className="text-muted-foreground text-xs font-medium md:text-sm">
+                    Total Expenses This Period
+                  </p>
+                  <p className="text-2xl font-bold md:text-3xl">
+                    Rp {totalThisMonth.toLocaleString("id-ID")}
+                  </p>
                 </div>
               </div>
               <div className="hidden sm:block">
@@ -265,7 +316,10 @@ export const MasterTransaction = () => {
                 <div className="flex items-center gap-2">
                   <Calendar className="text-muted-foreground size-4" />
                   <div className="flex flex-1 gap-2 sm:flex-initial">
-                    <Select value={filterMonth.toString()} onValueChange={(val) => setFilterMonth(Number(val))}>
+                    <Select
+                      value={filterMonth.toString()}
+                      onValueChange={(val) => setFilterMonth(Number(val))}
+                    >
                       <SelectTrigger className="flex-1 sm:w-36">
                         <SelectValue>{months[filterMonth - 1]}</SelectValue>
                       </SelectTrigger>
@@ -278,12 +332,18 @@ export const MasterTransaction = () => {
                       </SelectContent>
                     </Select>
 
-                    <Select value={filterYear.toString()} onValueChange={(val) => setFilterYear(Number(val))}>
+                    <Select
+                      value={filterYear.toString()}
+                      onValueChange={(val) => setFilterYear(Number(val))}
+                    >
                       <SelectTrigger className="w-24 sm:w-28">
                         <SelectValue>{filterYear}</SelectValue>
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                        {Array.from(
+                          { length: 5 },
+                          (_, i) => new Date().getFullYear() - i,
+                        ).map((y) => (
                           <SelectItem key={y} value={y.toString()}>
                             {y}
                           </SelectItem>
@@ -293,7 +353,10 @@ export const MasterTransaction = () => {
                   </div>
                 </div>
 
-                <Select value={filterCategory ?? ""} onValueChange={setFilterCategory}>
+                <Select
+                  value={filterCategory ?? ""}
+                  onValueChange={setFilterCategory}
+                >
                   <SelectTrigger className="w-full sm:w-48">
                     <SelectValue placeholder="All Categories" />
                   </SelectTrigger>
@@ -335,7 +398,9 @@ export const MasterTransaction = () => {
                 cell: ({ row }) => (
                   <div className="flex items-center gap-2">
                     <Calendar className="text-muted-foreground size-4" />
-                    <span className="font-medium">{row.original.transaction_date}</span>
+                    <span className="font-medium">
+                      {row.original.transaction_date}
+                    </span>
                   </div>
                 ),
               },
@@ -368,7 +433,9 @@ export const MasterTransaction = () => {
                   return (
                     <div className="flex items-center gap-2">
                       <DollarSign className="text-destructive size-4" />
-                      <span className="font-bold">Rp {amount.toLocaleString("id-ID")}</span>
+                      <span className="font-bold">
+                        Rp {amount.toLocaleString("id-ID")}
+                      </span>
                     </div>
                   );
                 },
@@ -459,27 +526,40 @@ export const MasterTransaction = () => {
           <Card className="border-border/50 dark:border-border/30">
             <CardContent className="p-8 text-center">
               <CircleDollarSign className="text-muted-foreground mx-auto mb-3 size-12" />
-              <p className="text-muted-foreground text-sm">No transactions found</p>
+              <p className="text-muted-foreground text-sm">
+                No transactions found
+              </p>
             </CardContent>
           </Card>
         ) : (
           transactions.map((transaction) => {
-            const categoryName = transaction.category_id ? categoryMap[transaction.category_id] : null;
-            const paidByName = transaction.paid_by ? profileMap[transaction.paid_by] : null;
+            const categoryName = transaction.category_id
+              ? categoryMap[transaction.category_id]
+              : null;
+            const paidByName = transaction.paid_by
+              ? profileMap[transaction.paid_by]
+              : null;
 
             return (
-              <Card key={transaction.id} className="border-border/50 overflow-hidden dark:border-border/30">
+              <Card
+                key={transaction.id}
+                className="border-border/50 overflow-hidden dark:border-border/30"
+              >
                 <CardContent className="p-4">
                   <div className="space-y-3">
                     {/* Header: Date & Amount */}
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2">
                         <Calendar className="text-muted-foreground size-4" />
-                        <span className="text-sm font-medium">{transaction.transaction_date}</span>
+                        <span className="text-sm font-medium">
+                          {transaction.transaction_date}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1">
                         <DollarSign className="text-destructive size-4 dark:text-red-400" />
-                        <span className="text-lg font-bold">Rp {transaction.amount.toLocaleString("id-ID")}</span>
+                        <span className="text-lg font-bold">
+                          Rp {transaction.amount.toLocaleString("id-ID")}
+                        </span>
                       </div>
                     </div>
 
@@ -506,7 +586,9 @@ export const MasterTransaction = () => {
 
                     {/* Description */}
                     {transaction.description && (
-                      <p className="text-muted-foreground text-sm">{transaction.description}</p>
+                      <p className="text-muted-foreground text-sm">
+                        {transaction.description}
+                      </p>
                     )}
 
                     {/* Actions */}
@@ -610,7 +692,9 @@ export const MasterTransaction = () => {
               Amount
             </Label>
             <div className="relative">
-              <span className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 text-sm">Rp</span>
+              <span className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 text-sm">
+                Rp
+              </span>
               <Input
                 type="text"
                 value={amount}
@@ -624,7 +708,9 @@ export const MasterTransaction = () => {
                 className="pl-10"
               />
             </div>
-            <p className="text-muted-foreground text-xs">Enter amount in Rupiah (numbers only)</p>
+            <p className="text-muted-foreground text-xs">
+              Enter amount in Rupiah (numbers only)
+            </p>
           </div>
 
           {/* DESCRIPTION */}
@@ -658,7 +744,9 @@ export const MasterTransaction = () => {
               </SelectTrigger>
               <SelectContent>{profileOptions}</SelectContent>
             </Select>
-            <p className="text-muted-foreground text-xs">Select who paid for this expense</p>
+            <p className="text-muted-foreground text-xs">
+              Select who paid for this expense
+            </p>
           </div>
         </div>
       </FormDialog>
