@@ -1,7 +1,6 @@
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { FormDialog } from "@/components/FormDialog";
-import { Pagination } from "@/components/Pagination";
-import { PerPageSelect } from "@/components/PerPageSelect";
+import { LoadingMobileCards, LoadingStats, LoadingTable } from "@/components/LoadingState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
@@ -89,32 +88,35 @@ export const MasterTransaction = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [totalTransactions, setTotalTransactions] = useState(0);
-  const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(10);
-  const totalPages = Math.ceil(totalTransactions / perPage);
-
+  const [loading, setLoading] = useState(false);
   const [totalThisMonth, setTotalThisMonth] = useState(0);
   const [filterCategory, setFilterCategory] = useState("ALL");
 
-  const fetchTransactions = async (page = 1, limit = perPage) => {
-    const { data, count, error } = await getTransactions(
-      page,
-      limit,
-      filterMonth,
-      filterYear,
-      filterCategory,
-    );
-    if (error) return console.error(error);
-    setTransactions(data || []);
-    setTotalTransactions(count || 0);
-  };
-
-  const fetchTotalThisMonth = async () => {
-    const { data } = await getTransactions(1, 9999, filterMonth, filterYear); // ambil semua bulan ini
-    if (!data) return;
-    const total = data.reduce((sum, tx) => sum + tx.amount, 0);
-    setTotalThisMonth(total);
+  const fetchTransactions = async () => {
+    setLoading(true);
+    try {
+      // Fetch all transactions without pagination
+      const { data, error } = await getTransactions(
+        1,
+        1000, // Large number to get all transactions
+        filterMonth,
+        filterYear,
+        filterCategory,
+      );
+      if (error) {
+        console.error(error);
+        return;
+      }
+      setTransactions(data || []);
+      
+      // Calculate total for this month
+      const total = (data || []).reduce((sum, tx) => sum + tx.amount, 0);
+      setTotalThisMonth(total);
+    } catch (error) {
+      console.error("Failed to fetch transactions:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchSupportingData = async () => {
@@ -130,10 +132,8 @@ export const MasterTransaction = () => {
   }, []);
 
   useEffect(() => {
-    setPage(1);
-    fetchTransactions(1, perPage);
-    fetchTotalThisMonth();
-  }, [filterMonth, filterYear, filterCategory, perPage]);
+    fetchTransactions();
+  }, [filterMonth, filterYear, filterCategory]);
 
   // CREATE / UPDATE
   const save = async () => {
@@ -164,8 +164,7 @@ export const MasterTransaction = () => {
       toast.success("Transaction updated successfully!");
     }
 
-    await fetchTransactions(1, perPage);
-    await fetchTotalThisMonth(); // tambahan
+    await fetchTransactions();
     setOpenForm(false);
     resetForm();
   };
@@ -199,8 +198,7 @@ export const MasterTransaction = () => {
     if (error) return toast.error(error.message);
 
     toast.success("Transaction deleted successfully!");
-    await fetchTransactions(1, perPage);
-    await fetchTotalThisMonth(); // tambahan
+    await fetchTransactions();
     resetForm();
     setOpenDelete(false);
   };
@@ -276,8 +274,11 @@ export const MasterTransaction = () => {
       </div>
 
       {/* Stats & Filters Card */}
-      <Card className="border-border/50 dark:border-border/30">
-        <CardContent className="p-4 md:p-6">
+      {loading ? (
+        <LoadingStats />
+      ) : (
+        <Card className="border-border/50 dark:border-border/30">
+          <CardContent className="p-4 md:p-6">
           <div className="flex flex-col gap-4 md:gap-6">
             {/* Total This Month */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -292,17 +293,8 @@ export const MasterTransaction = () => {
                   <p className="text-2xl font-bold md:text-3xl">
                     Rp {totalThisMonth.toLocaleString("id-ID")}
                   </p>
+                  <p className="text-muted-foreground text-xs">{transactions.length} transactions</p>
                 </div>
-              </div>
-              <div className="hidden sm:block">
-                <PerPageSelect
-                  perPage={perPage}
-                  onChange={(newPerPage) => {
-                    setPerPage(newPerPage);
-                    setPage(1);
-                    fetchTransactions(1, newPerPage);
-                  }}
-                />
               </div>
             </div>
 
@@ -370,26 +362,18 @@ export const MasterTransaction = () => {
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Mobile PerPage */}
-              <div className="mt-3 sm:hidden">
-                <PerPageSelect
-                  perPage={perPage}
-                  onChange={(newPerPage) => {
-                    setPerPage(newPerPage);
-                    setPage(1);
-                    fetchTransactions(1, newPerPage);
-                  }}
-                />
-              </div>
             </div>
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Desktop Table View */}
-      <Card className="border-border/50 hidden md:block">
-        <CardContent className="p-6">
+      {loading ? (
+        <LoadingTable />
+      ) : (
+        <Card className="border-border/50 hidden md:block dark:border-border/30">
+          <CardContent className="p-6">
           <DataTable
             columns={[
               {
@@ -519,9 +503,13 @@ export const MasterTransaction = () => {
           />
         </CardContent>
       </Card>
+      )}
 
       {/* Mobile Card View */}
-      <div className="space-y-3 md:hidden">
+      {loading ? (
+        <LoadingMobileCards />
+      ) : (
+        <div className="space-y-3 md:hidden">
         {transactions.length === 0 ? (
           <Card className="border-border/50 dark:border-border/30">
             <CardContent className="p-8 text-center">
@@ -631,22 +619,7 @@ export const MasterTransaction = () => {
           })
         )}
       </div>
-
-      {/* Pagination */}
-      <Pagination
-        page={page}
-        totalPages={totalPages}
-        onPrev={() => {
-          const newPage = page - 1;
-          setPage(newPage);
-          fetchTransactions(newPage, perPage);
-        }}
-        onNext={() => {
-          const newPage = page + 1;
-          setPage(newPage);
-          fetchTransactions(newPage, perPage);
-        }}
-      />
+      )}
 
       {/* Form Dialog */}
       <FormDialog
